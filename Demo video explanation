@@ -2,11 +2,16 @@
 
 An automated Telegram chatbot built with n8n, OpenAI, and Google Sheets. The bot answers coaching-related questions using a PDF brochure and records student inquiries in a lead-management spreadsheet.
 
-This project connects a conversational interface with document-based question answering and CRM automation, demonstrating how a student inquiry can move from a Telegram message to an AI-generated reply and a saved lead.
+This project connects a conversational interface with document-based question answering and CRM automation, demonstrating how a student inquiry can move from a Telegram message to an AI-generated reply and a saved CRM record.
 
 ## Demo Video
 
-[Watch the complete workflow demonstration](YOUR_VIDEO_LINK)
+<video controls width="100%" playsinline>
+  <source src="./Demo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+[Download the demo video](./Demo.mp4)
 
 **The video has no voice narration.** It demonstrates the following steps visually:
 
@@ -35,7 +40,7 @@ Live demo availability depends on the n8n hosting service and model credits.
 
 ## Problem This Project Addresses
 
-Coaching institutes receive repeated questions about their programmes, study material, course duration, and admissions. Answering these inquiries manually and maintaining a separate record of interested students can involve repetitive work.
+Coaching institutes receive repeated questions about their programmes, study material, course duration, and admissions. Answering these inquiries manually and maintaining a separate record of interested students is time-consuming.
 
 This workflow combines two tasks:
 
@@ -145,3 +150,4 @@ flowchart TD
 
     B -->|Yes: Shared contact| H[Update Phone in CRM]
     H --> I[Send Thanks]
+```
