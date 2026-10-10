@@ -1,0 +1,147 @@
+# AI Coaching FAQ & Lead Capture Bot
+
+An automated Telegram chatbot built with n8n, OpenAI, and Google Sheets. The bot answers coaching-related questions using a PDF brochure and records student inquiries in a lead-management spreadsheet.
+
+This project connects a conversational interface with document-based question answering and CRM automation, demonstrating how a student inquiry can move from a Telegram message to an AI-generated reply and a saved lead.
+
+## Demo Video
+
+[Watch the complete workflow demonstration](YOUR_VIDEO_LINK)
+
+**The video has no voice narration.** It demonstrates the following steps visually:
+
+1. A user sends a coaching-related question to the Telegram bot.
+2. The workflow processes the message and generates a response using the configured brochure.
+3. The bot sends its answer back to the user on Telegram.
+4. The user's inquiry and available profile details are saved in Google Sheets.
+
+The recording shows both the conversation and the resulting lead entry, allowing viewers to follow the complete message-to-CRM process.
+
+## Live Demo
+
+[Open the Telegram Bot](https://t.me/RajeshCoachingFAQ_bot)
+
+Open the bot, press **Start**, and send a question related to the brochure.
+
+Example questions:
+
+- What is the course duration?
+- What study material is included?
+- What does the classroom programme cover?
+
+The current demo uses a publicly available Drishti IAS brochure. This is an independent portfolio project and is not affiliated with Drishti IAS.
+
+Live demo availability depends on the n8n hosting service and model credits.
+
+## Problem This Project Addresses
+
+Coaching institutes receive repeated questions about their programmes, study material, course duration, and admissions. Answering these inquiries manually and maintaining a separate record of interested students can involve repetitive work.
+
+This workflow combines two tasks:
+
+- Responding to student questions using a configured information source.
+- Recording inquiries in a spreadsheet for later review and follow-up.
+
+The project demonstrates an automated first-response and lead-capture process. It does not replace the admission team or independently confirm information missing from the brochure.
+
+## Technology Stack
+
+| Technology | Role |
+|------------|------|
+| n8n | Workflow orchestration and integrations |
+| Telegram Bot API | Receives user messages and sends replies |
+| OpenAI chat model | Generates responses from the brochure text |
+| PDF extraction | Converts the brochure into text |
+| Chat memory | Maintains conversational context per Telegram chat |
+| Google Sheets | Stores and updates lead information |
+
+## How the Workflow Works
+
+### 1. Receive a Telegram Message
+
+The Telegram Trigger starts the workflow when the connected bot receives a message.
+
+The message provides the user's question and Telegram metadata, including the chat ID and available profile information.
+
+### 2. Identify the Message Type
+
+The **Shared Contact?** node checks whether the message contains a shared contact.
+
+The workflow has two branches:
+
+- **Question branch:** answers a text inquiry and records the lead.
+- **Contact branch:** updates a shared phone number and sends an acknowledgement.
+
+These branches run separately depending on the message type.
+
+### 3. Download the Brochure
+
+For a text inquiry, the workflow downloads the configured public PDF brochure.
+
+This PDF acts as the information source for the FAQ response. The bot does not perform a general web search or browse arbitrary websites.
+
+### 4. Extract the PDF Text
+
+The extraction node converts the brochure into text and joins the pages.
+
+The resulting text is passed to the FAQ agent alongside the student's question.
+
+### 5. Generate a Contextual Answer
+
+The FAQ agent is instructed to answer using only the brochure content.
+
+Its prompt requests:
+
+- Short and friendly replies.
+- Responses in the language used by the student, including Hindi, Hinglish, or English.
+- A fallback response when the requested information is unavailable.
+
+The workflow also uses a chat memory key based on the Telegram chat ID, keeping conversation context separate for each chat.
+
+Prompt instructions reduce unsupported answers, but model responses can still contain errors and require verification.
+
+### 6. Save or Update the Lead
+
+The Google Sheets node uses **Chat ID** as the matching field.
+
+This allows repeat inquiries from the same Telegram chat to update the existing lead row instead of creating a new row for every message.
+
+The lead spreadsheet contains these columns:
+
+| Column | Purpose |
+|--------|---------|
+| Chat ID | Identifies the Telegram conversation |
+| Name | Stores the available user name |
+| Username | Stores the Telegram username, when available |
+| Phone Number | Stores a number voluntarily shared through the contact button |
+| Last Question | Records the latest inquiry |
+| Timestamp | Records when the row was updated |
+
+### 7. Send the Reply to Telegram
+
+The bot sends the FAQ agent's answer back to the original Telegram chat.
+
+The reply includes a **Share my number** button, allowing the user to voluntarily provide contact details.
+
+### 8. Handle a Shared Contact
+
+When the user shares a contact, the contact branch updates the CRM row with the phone number and sends a thank-you message.
+
+The bot does not automatically obtain a phone number from an ordinary text message.
+
+## Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Telegram Trigger] --> B{Shared Contact?}
+
+    B -->|No: Text inquiry| C[Download Brochure PDF]
+    C --> D[Extract Brochure Text]
+    D --> E[FAQ Agent]
+    M[OpenAI Chat Model] --> E
+    N[Chat Memory] --> E
+    E --> F[Save Lead to CRM]
+    F --> G[Send Answer on Telegram]
+
+    B -->|Yes: Shared contact| H[Update Phone in CRM]
+    H --> I[Send Thanks]
