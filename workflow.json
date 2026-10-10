@@ -1,0 +1,489 @@
+{
+  "name": "Coaching Lead-Gen & FAQ Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "a218689b-67ea-409a-8351-514844948726",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -704,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "contact-check",
+              "leftValue": "={{ $json.message.contact ? \"yes\" : \"no\" }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a859aa74-fb2b-4be6-ba25-a5391cc90e1b",
+      "name": "Shared Contact?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -480,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Chat ID"
+          ],
+          "value": {
+            "Chat ID": "={{ $json.message.chat.id }}",
+            "Name": "={{ (($json.message.contact.first_name || \"\") + \" \" + ($json.message.contact.last_name || \"\")).trim() }}",
+            "Phone Number": "={{ $json.message.contact.phone_number }}",
+            "Timestamp": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "Chat ID",
+              "displayName": "Chat ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Username",
+              "displayName": "Username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Last Question",
+              "displayName": "Last Question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9235fade-12c5-44fd-b071-43a684151d52",
+      "name": "Update Phone in CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -256,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Telegram Trigger\").item.json.message.chat.id }}",
+        "text": "Shukriya! 🙏 Aapki details mil gayi hain. Hamari admission team aapse jaldi contact karegi.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b0f15999-e606-4871-90a8-62f1818b59f1",
+      "name": "Send Thanks",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.drishtiias.com/images/pdf/Dristi%20Brochure%20(General%20Studies)%20for%20Allahabad%20(English).pdf",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "35f5b3cc-5781-43a9-8979-b21c23ebbe97",
+      "name": "Download Brochure PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -256,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true
+        }
+      },
+      "id": "fd38fecf-554f-4c2d-8337-e81dfc39ad13",
+      "name": "Extract Brochure Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $(\"Telegram Trigger\").item.json.message.text }}",
+        "options": {
+          "systemMessage": "=You are the front-desk assistant for a coaching institute. Answer the student ONLY using the institute brochure below. If the answer is not in the brochure, politely say you will have the team confirm and share details shortly. Keep replies short, friendly and in the same language the student used (Hindi/Hinglish/English).\n\n=== INSTITUTE BROCHURE ===\n{{ $(\"Extract Brochure Text\").item.json.text }}\n=== END BROCHURE ==="
+        }
+      },
+      "id": "c6045d28-d290-4e3d-851b-16f68536b7f8",
+      "name": "FAQ Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        192,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "b5744734-a5a1-4ae2-9244-d1e646210aed",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $(\"Telegram Trigger\").item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "id": "caa0cf4b-4ab3-4d96-b78b-d150e4fd7a44",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        336,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Chat ID"
+          ],
+          "value": {
+            "Chat ID": "={{ $(\"Telegram Trigger\").item.json.message.chat.id }}",
+            "Name": "={{ (($(\"Telegram Trigger\").item.json.message.from.first_name || \"\") + \" \" + ($(\"Telegram Trigger\").item.json.message.from.last_name || \"\")).trim() }}",
+            "Username": "={{ $(\"Telegram Trigger\").item.json.message.from.username }}",
+            "Last Question": "={{ $(\"Telegram Trigger\").item.json.message.text }}",
+            "Timestamp": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "Chat ID",
+              "displayName": "Chat ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Username",
+              "displayName": "Username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Last Question",
+              "displayName": "Last Question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "362fa37f-51d3-4e78-bd81-1c0472c66403",
+      "name": "Save Lead to CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Telegram Trigger\").item.json.message.chat.id }}",
+        "text": "={{ $(\"FAQ Agent\").item.json.output }}\n\n👇 Admission team se call paane ke liye apna number share karein:",
+        "replyMarkup": "replyKeyboard",
+        "replyKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "📱 Share my number",
+                    "additionalFields": {
+                      "request_contact": true
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "replyKeyboardOptions": {
+          "resize_keyboard": true,
+          "one_time_keyboard": true
+        },
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "65831352-fa05-4b2d-b4fc-d7d8bbab78f7",
+      "name": "Send Answer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        176
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Shared Contact?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shared Contact?": {
+      "main": [
+        [
+          {
+            "node": "Update Phone in CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Brochure PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Phone in CRM": {
+      "main": [
+        [
+          {
+            "node": "Send Thanks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Brochure PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract Brochure Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Brochure Text": {
+      "main": [
+        [
+          {
+            "node": "FAQ Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to CRM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FAQ Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "FAQ Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": []
+}
